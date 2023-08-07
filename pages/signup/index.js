@@ -12,19 +12,50 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import Typography from '@mui/material/Typography';
 import Container from '@mui/material/Container';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-
+import { apiCallWithoutAuth } from '../../utils/http'
+import { Snackbar, Alert } from "@mui/material";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { delayPromise } from '@/utils/promises';
 const defaultTheme = createTheme();
 
 export default function SignUp() {
-  const handleSubmit = (event) => {
+  const router = useRouter();
+  const [popup, setPopup] = useState({
+    visible: false,
+    msg: "",
+    status: "",
+  });
+  const [disableSubmit, setDisableSubmit] = useState(false);
+  const closePopup = () => {
+    setPopup({});
+  }
+  const handleSubmit = async (event) => {
+    setDisableSubmit(true);
+    debugger;
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get('email'),
-      password: data.get('password'),
-    });
+    const payload = {
+      EmailAddress: data.get('EmailAddress'),
+      Password: data.get('Password'),
+      FirstName: data.get('FirstName'),
+      LastName: data.get('LastName')
+    };
+    const res = await apiCallWithoutAuth("post", "/v1/auth/signup", {body: payload});
+    setPopup({
+      visible: true, 
+      msg: res?.message ? res.message : res.status ? "Success": "Something went wrong" ,
+      status: res.status ? "success": "error"
+    })
+    setDisableSubmit(false);
+    if(res.status) {
+      await delayPromise(1000);
+      router.push('/login');
+      setTimeout(() => {
+        setPopup({});
+      }, 6000);
+    } 
   };
-
   return (
     <ThemeProvider theme={defaultTheme}>
       <Container component="main" maxWidth="xs">
@@ -48,10 +79,10 @@ export default function SignUp() {
               <Grid item xs={12} sm={6}>
                 <TextField
                   autoComplete="given-name"
-                  name="firstName"
+                  name="FirstName"
                   required
                   fullWidth
-                  id="firstName"
+                  id="FirstName"
                   label="First Name"
                   autoFocus
                 />
@@ -62,7 +93,7 @@ export default function SignUp() {
                   fullWidth
                   id="lastName"
                   label="Last Name"
-                  name="lastName"
+                  name="LastName"
                   autoComplete="family-name"
                 />
               </Grid>
@@ -72,7 +103,7 @@ export default function SignUp() {
                   fullWidth
                   id="email"
                   label="Email Address"
-                  name="email"
+                  name="EmailAddress"
                   autoComplete="email"
                 />
               </Grid>
@@ -80,23 +111,24 @@ export default function SignUp() {
                 <TextField
                   required
                   fullWidth
-                  name="password"
+                  name="Password"
                   label="Password"
                   type="password"
                   id="password"
                   autoComplete="new-password"
                 />
               </Grid>
-              <Grid item xs={12}>
+              {/* <Grid item xs={12}>
                 <FormControlLabel
                   control={<Checkbox value="allowExtraEmails" color="primary" />}
                   label="I want to receive inspiration, marketing promotions and updates via email."
                 />
-              </Grid>
+              </Grid> */}
             </Grid>
             <Button
               type="submit"
               fullWidth
+              disabled={disableSubmit}
               variant="contained"
               sx={{ mt: 3, mb: 2 }}
             >
@@ -111,7 +143,11 @@ export default function SignUp() {
             </Grid>
           </Box>
         </Box>
-        {/* <Copyright sx={{ mt: 5 }} /> */}
+        <Snackbar open={popup.visible} autoHideDuration={6000} onClose={closePopup}>
+          <Alert onClose={closePopup} severity={popup.status} sx={{ width: '100%' }}>
+            {popup.msg}
+          </Alert>
+        </Snackbar>
       </Container>
     </ThemeProvider>
   );
