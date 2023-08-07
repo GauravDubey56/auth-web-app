@@ -17,10 +17,19 @@ import { Snackbar, Alert } from "@mui/material";
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { delayPromise } from '@/utils/promises';
+import * as localStore from '../../utils/localstore'
 const defaultTheme = createTheme();
 
 export default function SignUp() {
   const router = useRouter();
+  useEffect(() => {
+    if(localStore.isLoggedIn()) {
+      router.push('/home')
+    }
+  }, [])
+  // if(localStore.isLoggedIn()) {
+  //   return <h1>Redirecting to main site</h1>
+  // }
   const [popup, setPopup] = useState({
     visible: false,
     msg: "",

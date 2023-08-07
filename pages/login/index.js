@@ -7,17 +7,60 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
-import { Snackbar } from "@mui/material";
+import { Snackbar, Alert } from "@mui/material";
+import { useRouter } from "next/router";
+import { apiCallWithoutAuth } from "@/utils/http";
+import { useState, useEffect } from "react";
+import { delayPromise } from "@/utils/promises";
+import * as localStore from '../../utils/localstore'
 export default function SignIn() {
-  const handleSubmit = (event) => {
+  const router = useRouter();
+  const [popup, setPopup] = useState({
+    visible: false,
+    msg: "",
+    status: "",
+  });
+  const [disableSubmit, setDisableSubmit] = useState(false);
+  const closePopup = () => {
+    setPopup({});
+  };
+  useEffect(() => {
+    if(localStore.isLoggedIn()) {
+      router.push('/home')
+    }
+  }, [])
+  // if(localStore.isLoggedIn()) {
+  //   return <h1>Redirecting to main site</h1>
+  // }
+  const handleSubmit = async (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    console.log({
-      email: data.get("email"),
-      password: data.get("password"),
+    const payload = {
+      EmailAddress: data.get("email"),
+      Password: data.get("password"),
+    };
+    const res = await apiCallWithoutAuth("post", "/v1/auth/login", {
+      body: payload,
     });
+    setPopup({
+      visible: true,
+      msg: res?.message
+        ? res.message
+        : res.status
+        ? "Success"
+        : "Something went wrong",
+      status: res.status ? "success" : "error",
+    });
+    setDisableSubmit(false);
+    if (res.status && res.data) {
+      localStore.setLocalKey('token', res.data)
+      await delayPromise(1000);
+      router.push("/home");
+      setTimeout(() => {
+        setPopup({});
+      }, 6000);
+    }
   };
-
   return (
     <Container component="main" maxWidth="xs">
       <Box
@@ -59,6 +102,7 @@ export default function SignIn() {
           <Button
             type="submit"
             fullWidth
+            disabled={disableSubmit}
             variant="contained"
             sx={{ mt: 3, mb: 2 }}
           >
@@ -78,6 +122,11 @@ export default function SignIn() {
           </Grid>
         </Box>
       </Box>
+      <Snackbar open={popup.visible} autoHideDuration={6000} onClose={closePopup}>
+          <Alert onClose={closePopup} severity={popup.status} sx={{ width: '100%' }}>
+            {popup.msg}
+          </Alert>
+      </Snackbar>
     </Container>
   );
 }
