@@ -7,11 +7,12 @@ import Grid from "@mui/material/Grid";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Container from "@mui/material/Container";
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert, Avatar } from "@mui/material";
 import { useRouter } from "next/router";
 import { apiCallWithoutAuth } from "@/utils/http";
 import { useState, useEffect } from "react";
 import { delayPromise } from "@/utils/promises";
+import { LockOutlined } from "@mui/icons-material";
 import * as localStore from '../../utils/localstore'
 export default function SignIn() {
   const router = useRouter();
@@ -71,6 +72,9 @@ export default function SignIn() {
           alignItems: "center",
         }}
       >
+          <Avatar sx={{ m: 1, bgcolor: 'secondary.main' }}>
+            <LockOutlined />
+          </Avatar>
         <Typography component="h1" variant="h5">
           Sign in
         </Typography>
